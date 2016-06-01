@@ -4,7 +4,7 @@ Compress state matrix and back.
 '''
 from midi_debug import *
 from midi_sequence import *
-
+import operator
 
 def compress_rows(state_matrix, batch_size):
     def compute_batch_average(state_matrix, start_idx, end_idx):
@@ -19,12 +19,27 @@ def compress_rows(state_matrix, batch_size):
 
         return ret
 
+    def compute_batch_mode(state_matrix, start_idx, end_idx):
+        ret = [0] * len(state_matrix[0])
+        note_dict = [{} for i in xrange(len(state_matrix[0]))]
+        
+        for i in xrange(start_idx, end_idx):
+            for j in xrange(len(ret)):
+            	if state_matrix[i][j] in note_dict[j].keys():
+            		note_dict[j][state_matrix[i][j]] += 1
+            	else:
+            		note_dict[j][state_matrix[i][j]] = 1
+
+        for i in xrange(len(ret)):
+            ret[i] = max(note_dict[i].iteritems(), key=operator.itemgetter(1))[0]
+
+        return ret
+
     ret = []
 
     for i in xrange(0, len(state_matrix), batch_size):
-        batch_average_row = compute_batch_average(
-            state_matrix, i, min(i + batch_size, len(state_matrix)))
-        ret.append(batch_average_row)
+        batch_mode_row = compute_batch_mode(state_matrix, i, min(i + batch_size, len(state_matrix)))
+        ret.append(batch_mode_row)
 
     return ret
 
